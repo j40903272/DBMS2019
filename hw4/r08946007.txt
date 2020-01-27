@@ -1,0 +1,47 @@
+# load csv
+LOAD CSV FROM 'File:///EECS5178_dataset.csv' AS line
+CREATE (:Person { ID:line[0], identity: line[1], department:line[2], grade:line[3], stuID:line[4], name:line[5], en_name:line[6], phone:line[7], email:line[8], group:line[9]})
+
+# create relation
+MATCH (a:Person),(b:Person)
+WHERE a.stuID = 'r08946007' AND b.department = '資料科學學程碩士班' AND b.stuID <> 'r08946007'
+CREATE (a)-[r:peer]->(b)
+RETURN type(r)
+
+# show me and my peer
+MATCH (a:Person)
+WHERE a.department = '資料科學學程碩士班'
+RETURN a
+
+
+# load csv
+LOAD CSV WITH HEADERS FROM 'File:///108-1SQL_hobby_dataset.csv.csv' AS line
+UNWIND [line.hobby1, line.hobby2, line.hobby3, line.hobby4, line.hobby5] AS x
+WITH line, COLLECT(x) AS hobbies
+CREATE (s {studentID:line.`學號`, name:line.`姓名`, hobby:hobbies})
+
+# hobby friend
+MATCH (n {studentID:'r08946007'}), (m) 
+WHERE ANY(x IN n.hobby where x IN m.hobby)
+RETURN DISTINCT m.name
+
+# foaf and their hobbies
+match (n{studentID:'r08946007'}), (m)
+where any(x in n.hobby where x in m.hobby)
+with m, n
+match (m), (o)
+where any(x in m.hobby where x in o.hobby) and (o.studentID <> 'r08946007')
+return DISTINCT o.name, filter(y in o.hobby where not y in n.hobby)
+
+# all hobbies of foaf
+match (n{studentID:'r08946007'}), (m)
+where any(x in n.hobby where x in m.hobby)
+with m, n
+match (m), (o)
+where any(x in m.hobby where x in o.hobby) and (o.studentID <> 'r08946007')
+unwind filter(y in o.hobby where not y in n.hobby) as new_hobby
+return distinct new_hobby
+
+
+
+
